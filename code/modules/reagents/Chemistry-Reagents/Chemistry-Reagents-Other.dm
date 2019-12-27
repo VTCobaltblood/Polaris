@@ -212,15 +212,13 @@
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
 			if(O.status & ORGAN_BROKEN)
 				O.mend_fracture()		//Only works if the bone won't rebreak, as usual
+			if(O.status & ORGAN_ARTERY_CUT)
+				O.status &= ~ORGAN_ARTERY_CUT
+			if(O.status & ORGAN_TENDON_CUT)
+				O.status &= ~ORGAN_TENDON_CUT
 			for(var/datum/wound/W in O.wounds)
 				if(W.bleeding())
 					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
-				if(W.internal)
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
 
 /datum/reagent/gold
 	name = "Gold"

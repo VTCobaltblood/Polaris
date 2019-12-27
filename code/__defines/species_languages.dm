@@ -10,6 +10,9 @@
 #define NO_BLOOD		  0x100  // Never bleed, never show blood amount
 #define UNDEAD			  0x200	 // Various things that living things don't do, mostly for skeletons
 #define NO_INFECT		  0x400  // Don't allow infections in limbs or organs, similar to IS_PLANT, without other strings.
+#define NO_ARTERIES       0x800   // This species does not have arteries.
+#define NO_TENDONS        0x1024   // This species does not have tendons.
+
 // unused: 0x8000 - higher than this will overflow
 
 // Species spawn flags

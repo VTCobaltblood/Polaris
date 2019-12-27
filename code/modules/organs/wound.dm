@@ -36,8 +36,6 @@
 
 	// stages such as "cut", "deep cut", etc.
 	var/list/stages
-	// internal wounds can only be fixed through surgery
-	var/internal = 0
 	// maximum stage at which bleeding should still happen. Beyond this stage bleeding is prevented.
 	var/max_bleeding_stage = 0
 	// one of CUT, PIERCE, BRUISE, BURN
@@ -155,11 +153,7 @@
 
 	// heal the given amount of damage, and if the given amount of damage was more
 	// than what needed to be healed, return how much heal was left
-	// set @heals_internal to also heal internal organ damage
 	proc/heal_damage(amount, heals_internal = 0)
-		if(src.internal && !heals_internal)
-			// heal nothing
-			return amount
 
 		var/healed_damage = min(src.damage, amount)
 		amount -= healed_damage
@@ -203,8 +197,6 @@
 		return 1
 
 	proc/bleeding()
-		if (src.internal)
-			return 0	// internal wounds don't bleed in the sense of this function
 
 		if (current_stage > max_bleeding_stage)
 			return 0
@@ -362,13 +354,6 @@ datum/wound/puncture/massive
 
 /datum/wound/burn/carbonised
 	stages = list("carbonised area" = 50, "healing carbonised area" = 20, "massive burn scar" = 0)
-
-/** INTERNAL BLEEDING **/
-/datum/wound/internal_bleeding
-	internal = 1
-	stages = list("severed artery" = 30, "cut artery" = 20, "damaged artery" = 10, "bruised artery" = 5)
-	autoheal_cutoff = 5
-	max_bleeding_stage = 4	//all stages bleed. It's called internal bleeding after all.
 
 /** EXTERNAL ORGAN LOSS **/
 /datum/wound/lost_limb

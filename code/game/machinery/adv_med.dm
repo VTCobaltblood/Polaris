@@ -360,10 +360,11 @@
 					organStatus["bleeding"] = 1
 				if(E.status & ORGAN_DEAD)
 					organStatus["dead"] = 1
-				for(var/datum/wound/W in E.wounds)
-					if(W.internal)
-						organStatus["internalBleeding"] = 1
-						break
+				if(E.status & ORGAN_ARTERY_CUT)
+					organStatus["cutArtery"] = 1
+				if(E.status & ORGAN_TENDON_CUT)
+					organStatus["tendonCut"] = 1
+				break
 
 				organData["status"] = organStatus
 
@@ -508,13 +509,16 @@
 				var/bled = ""
 				var/splint = ""
 				var/internal_bleeding = ""
+				var/severed_tendon = ""
 				var/lung_ruptured = ""
 				var/o_dead = ""
-				for(var/datum/wound/W in e.wounds) if(W.internal)
-					internal_bleeding = "<br>Internal bleeding"
-					break
+				var/dislocated = ""
 				if(istype(e, /obj/item/organ/external/chest) && occupant.is_lung_ruptured())
 					lung_ruptured = "Lung ruptured:"
+				if(e.status & ORGAN_ARTERY_CUT)
+					internal_bleeding = "Arterial bleeding:"
+				if(e.status & ORGAN_TENDON_CUT)
+					severed_tendon = "Severed tendon:"
 				if(e.splinted)
 					splint = "Splinted:"
 				if(e.status & ORGAN_BLEEDING)
@@ -525,6 +529,8 @@
 					robot = "Prosthetic:"
 				if(e.status & ORGAN_DEAD)
 					o_dead = "Necrotic:"
+				if(e.is_dislocated())
+					dislocated = "Dislocated:"
 				if(e.open)
 					open = "Open:"
 				switch (e.germ_level)
@@ -555,7 +561,7 @@
 				if(!AN && !open && !infected & !imp)
 					AN = "None:"
 				if(!(e.status & ORGAN_DESTROYED))
-					dat += "<td>[e.name]</td><td>[e.burn_dam]</td><td>[e.brute_dam]</td><td>[robot][bled][AN][splint][open][infected][imp][internal_bleeding][lung_ruptured][o_dead]</td>"
+					dat += "<td>[e.name]</td><td>[e.burn_dam]</td><td>[e.brute_dam]</td><td>[robot][bled][AN][splint][open][infected][dislocated][imp][internal_bleeding][severed_tendon][lung_ruptured][o_dead]</td>"
 				else
 					dat += "<td>[e.name]</td><td>-</td><td>-</td><td>Not Found</td>"
 				dat += "</tr>"

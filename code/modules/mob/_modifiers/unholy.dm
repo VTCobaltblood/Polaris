@@ -134,11 +134,8 @@
 					var/obj/item/organ/external/affected = E
 					if((affected.damage < affected.min_broken_damage * config.organ_health_multiplier) && (affected.status & ORGAN_BROKEN))
 						affected.status &= ~ORGAN_BROKEN
-
-					for(var/datum/wound/W in affected.wounds) // Fix IB
-						if(istype(W, /datum/wound/internal_bleeding))
-							affected.wounds -= W
-							affected.update_damages()
+					if(affected.status && ORGAN_ARTERY_CUT)
+						affected.status &= ~ORGAN_ARTERY_CUT
 
 				H.restore_blood()
 				if(!iscultist(H))

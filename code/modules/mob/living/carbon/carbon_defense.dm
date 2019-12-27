@@ -85,6 +85,12 @@
 
 	adjustOxyLoss(min(oxyloss, 100 - getOxyLoss())) //don't put them over 100 oxyloss
 
+	if(ishuman(src))
+		var/mob/living/carbon/human/H = src
+		var/obj/item/organ/external/head = H.get_organ("head")
+		if(head)
+			head.sever_artery()
+
 	if(total_damage)
 		if(oxyloss >= 40)
 			user.visible_message("<span class='danger'>\The [user] slit [src]'s throat open with \the [W]!</span>")

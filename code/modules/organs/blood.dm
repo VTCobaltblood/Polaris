@@ -143,6 +143,8 @@ var/const/CE_STABLE_THRESHOLD = 0.5
 
 		// Some species bleed out differently
 		blood_loss_divisor /= species.bloodloss_rate
+		var/open_wound
+		var/list/do_spray = list()
 
 		// Some modifiers can make bleeding better or worse.  Higher multiplers = more bleeding.
 		var/blood_loss_modifier_multiplier = 1.0
@@ -159,37 +161,93 @@ var/const/CE_STABLE_THRESHOLD = 0.5
 				continue
 			for(var/datum/wound/W in temp.wounds)
 				if(W.bleeding())
-					if(W.damage_type == PIERCE) //gunshots and spear stabs bleed more
-						blood_loss_divisor = max(blood_loss_divisor - 5, 1)
-					else if(W.damage_type == BRUISE) //bruises bleed less
-						blood_loss_divisor = max(blood_loss_divisor + 5, 1)
-					//the farther you get from those vital regions, the less you bleed
-					//depending on how dangerous bleeding turns out to be, it might be better to only apply the reduction to hands and feet
-					if((temp.organ_tag == BP_L_ARM) || (temp.organ_tag == BP_R_ARM) || (temp.organ_tag == BP_L_LEG) || (temp.organ_tag == BP_R_LEG))
-						blood_loss_divisor = max(blood_loss_divisor + 5, 1)
-					else if((temp.organ_tag == BP_L_HAND) || (temp.organ_tag == BP_R_HAND) || (temp.organ_tag == BP_L_FOOT) || (temp.organ_tag == BP_R_FOOT))
-						blood_loss_divisor = max(blood_loss_divisor + 10, 1)
-					if(CE_STABLE in chem_effects)	//Inaprov slows bloodloss
-						blood_loss_divisor = max(blood_loss_divisor + 10, 1)
+					open_wound = TRUE
 					if(temp.applied_pressure)
 						if(ishuman(temp.applied_pressure))
 							var/mob/living/carbon/human/H = temp.applied_pressure
 							H.bloody_hands(src, 0)
-						//somehow you can apply pressure to every wound on the organ at the same time
-						//you're basically forced to do nothing at all, so let's make it pretty effective
-						var/min_eff_damage = max(0, W.damage - 10) / (blood_loss_divisor / 5) //still want a little bit to drip out, for effect
-						blood_max += max(min_eff_damage, W.damage - 30) / blood_loss_divisor
+						var/min_eff_damage = max(0, W.damage - 10) / 6
+						blood_max += max(min_eff_damage, W.damage - 30) / 40
 					else
-						blood_max += W.damage / blood_loss_divisor
+						blood_max += (W.damage / blood_loss_divisor)
+				if(temp.status & ORGAN_ARTERY_CUT)
+					var/bleed_amount = round(vessel.total_volume / (temp.applied_pressure || !open_wound ? 450 : 300))
+					if(bleed_amount)
+						if(open_wound)
+							blood_max += bleed_amount / blood_loss_divisor
+							do_spray += temp.name
+						else
+							blood_max += W.damage / blood_loss_divisor
 
 			if(temp.open)
 				blood_max += 2 //Yer stomach is cut open
-		drip(blood_max)
+
+		if(world.time >= next_blood_squirt && istype(loc, /turf) && do_spray.len)
+			visible_message("<span class='danger'>Blood squirts from \the [src]'s [pick(do_spray)]!</span>", "<span class='danger'><font size='3'>Blood is squirting out of your [pick(do_spray)]!</font></span>")
+			eye_blurry = 2
+			Stun(1)
+			next_blood_squirt = world.time + 100
+			var/turf/sprayloc = get_turf(src)
+			blood_max -= drip(round(blood_max/3), sprayloc)
+			if(blood_max > 0)
+				blood_max -= blood_squirt(blood_max, sprayloc)
+				if(blood_max > 0)
+					drip(blood_max, get_turf(src))
+		else
+			drip(blood_max)
+
+/mob/living/carbon/human
+	var/next_blood_squirt = 0
 
 //Makes a blood drop, leaking amt units of blood from the mob
-/mob/living/carbon/human/proc/drip(var/amt)
+/mob/living/carbon/human/proc/drip(var/amt as num, var/tar = src, var/spraydir)
 	if(remove_blood(amt))
-		blood_splatter(src,src)
+		blood_splatter(tar, src, spray_dir = spraydir)
+
+#define BLOOD_SPRAY_DISTANCE 2
+/mob/living/carbon/human/proc/blood_squirt(var/amt, var/turf/sprayloc)
+	if(amt <= 0 || !istype(sprayloc))
+		return
+	var/spraydir = pick(alldirs)
+	amt = round(amt/BLOOD_SPRAY_DISTANCE, 1)
+	var/bled = 0
+	spawn(0)
+		for(var/i = 1 to BLOOD_SPRAY_DISTANCE)
+			sprayloc = get_step(sprayloc, spraydir)
+			if(!istype(sprayloc) || sprayloc.density)
+				break
+			var/hit_mob
+			for(var/thing in sprayloc)
+				var/atom/A = thing
+				if(!A.simulated)
+					continue
+
+				if(ishuman(A))
+					var/mob/living/carbon/human/H = A
+					if(!H.lying)
+						H.bloody_body(src)
+						H.bloody_hands(src)
+						var/blinding = FALSE
+						if(ran_zone("head", 75))
+							blinding = TRUE
+							for(var/obj/item/I in list(H.head, H.glasses, H.wear_mask))
+								if(I && (I.body_parts_covered & EYES))
+									blinding = FALSE
+									break
+						if(blinding)
+							H.eye_blurry = max(H.eye_blurry, 10)
+							H.eye_blind = max(H.eye_blind, 5)
+							to_chat(H, "<span class='danger'>You are blinded by a spray of blood!</span>")
+						else
+							to_chat(H, "<span class='danger'>You are hit by a spray of blood!</span>")
+						hit_mob = TRUE
+
+				if(hit_mob || !A.CanPass(src, sprayloc))
+					break
+			drip(amt, sprayloc, spraydir)
+			bled += amt
+	return bled
+#undef BLOOD_SPRAY_DISTANCE
 
 /mob/living/carbon/human/proc/remove_blood(var/amt)
 	if(!should_have_organ(O_HEART)) //TODO: Make drips come from the reagents instead.
@@ -319,7 +377,7 @@ proc/blood_incompatible(donor,receiver,donor_species,receiver_species)
 		//AB is a universal receiver.
 	return 0
 
-proc/blood_splatter(var/target,var/datum/reagent/blood/source,var/large)
+proc/blood_splatter(var/target,var/datum/reagent/blood/source,var/large, var/spray_dir)
 
 	var/obj/effect/decal/cleanable/blood/B
 	var/decal_type = /obj/effect/decal/cleanable/blood/splatter
@@ -359,6 +417,10 @@ proc/blood_splatter(var/target,var/datum/reagent/blood/source,var/large)
 		B.basecolor = source.data["blood_colour"]
 		B.synthblood = synth
 		B.update_icon()
+
+	if(spray_dir)
+		B.icon_state = "squirt"
+		B.dir = spray_dir
 
 	// Update blood information.
 	if(source.data["blood_DNA"])

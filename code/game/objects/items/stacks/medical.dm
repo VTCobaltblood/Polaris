@@ -104,8 +104,6 @@
 					             "<span class='notice'>You start bandaging [M]'s [affecting.name].</span>" )
 			var/used = 0
 			for (var/datum/wound/W in affecting.wounds)
-				if (W.internal)
-					continue
 				if(W.bandaged)
 					continue
 				if(used == amount)
@@ -166,8 +164,6 @@
 					             "<span class='notice'>You start treating [M]'s [affecting.name].</span>" )
 			var/used = 0
 			for (var/datum/wound/W in affecting.wounds)
-				if (W.internal)
-					continue
 				if(W.bandaged)
 					continue
 				if(used == amount)
@@ -272,8 +268,6 @@
 					             "<span class='notice'>You start treating [M]'s [affecting.name].</span>" )
 			var/used = 0
 			for (var/datum/wound/W in affecting.wounds)
-				if (W.internal)
-					continue
 				if (W.bandaged && W.disinfected)
 					continue
 				if(used == amount)

@@ -228,10 +228,10 @@ HALOGEN COUNTER	- Radcount on mobs
 				dat += "<span class='warning'>[severity] inflammation detected in subject [a.name].</span><br>"
 		// Infections, fractures, and IB
 		var/basic_fracture = 0	// If it's a basic scanner
-		var/basic_ib = 0		// If it's a basic scanner
 		var/fracture_dat = ""	// All the fractures
+		var/artery_dat = ""		// All the cut arteries
+		var/tendon_dat = "" 	// All the cut tendons
 		var/infection_dat = ""	// All the infections
-		var/ib_dat = ""			// All the IB
 		for(var/obj/item/organ/external/e in H.organs)
 			if(!e)
 				continue
@@ -243,23 +243,20 @@ HALOGEN COUNTER	- Radcount on mobs
 					fracture_dat += "<span class='warning'>Bone fractures detected in subject [e.name].</span><br>"
 				else
 					basic_fracture = 1
+			if(e.status & ORGAN_ARTERY_CUT)
+				artery_dat += "<span class='warning'>The [e.artery_name] is cut, causing arterial bleeding from subject's [e.name].</span><br>"
+			if(e.status & ORGAN_TENDON_CUT)
+				tendon_dat += "<span class='warning'>The [e.tendon_name] is damaged, rendering subject's [e.name] unusable.</span><br>"
 			// Infections
 			if(e.has_infected_wound())
 				dat += "<span class='warning'>Infected wound detected in subject [e.name]. Disinfection recommended.</span><br>"
 			// IB
-			for(var/datum/wound/W in e.wounds)
-				if(W.internal)
-					if(advscan >= 1 && showadvscan == 1)
-						ib_dat += "<span class='warning'>Internal bleeding detected in subject [e.name].</span><br>"
-					else
-						basic_ib = 1
 		if(basic_fracture)
 			fracture_dat += "<span class='warning'>Bone fractures detected. Advanced scanner required for location.</span><br>"
-		if(basic_ib)
-			ib_dat += "<span class='warning'>Internal bleeding detected. Advanced scanner required for location.</span><br>"
 		dat += fracture_dat
 		dat += infection_dat
-		dat += ib_dat
+		dat += artery_dat
+		dat += tendon_dat
 
 		// Blood level
 		if(M:vessel)

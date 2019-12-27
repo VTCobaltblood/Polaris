@@ -63,16 +63,9 @@
 	M.eye_blurry = min(M.eye_blurry + wound_heal, 250)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			for(var/datum/wound/W in O.wounds)
-				if(W.bleeding())
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
-				if(W.internal)
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
+		for(var/obj/item/organ/external/E in H.organs)
+			if(E.status & ORGAN_ARTERY_CUT && prob(2))
+				E.status &= ~ORGAN_ARTERY_CUT
 
 /datum/reagent/bicaridine/topical
 	name = "Bicaridaze"
@@ -674,10 +667,8 @@
 					W.damage = max(W.damage - wound_heal, 0)
 					if(W.damage <= 0)
 						O.wounds -= W
-				if(W.internal)
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
+				if(O.status & ORGAN_ARTERY_CUT)
+					O.status &= ~ORGAN_ARTERY_CUT
 
 /datum/reagent/respirodaxon
 	name = "Respirodaxon"

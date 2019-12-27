@@ -43,11 +43,9 @@
 		if(prob(1))
 			owner << "<span class='danger'>Your abdomen is a world of pain!</span>"
 			owner.Weaken(10)
-
 			var/obj/item/organ/external/groin = owner.get_organ(BP_GROIN)
-			var/datum/wound/W = new /datum/wound/internal_bleeding(20)
 			owner.adjustToxLoss(25)
-			groin.wounds += W
+			groin.sever_artery()
 			inflamed = 1
 
 /obj/item/organ/internal/appendix/removed()
